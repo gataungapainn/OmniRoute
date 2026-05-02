@@ -163,6 +163,21 @@ export default function ModelSelectModal({
 
         const allModels = [...aliasModels, ...customEntries];
 
+        // Also inject built-in models from the registry for this passthrough provider
+        const builtInModels = getModelsByProviderId(providerId) || [];
+        const existingIds = new Set(allModels.map((m) => m.id));
+        builtInModels.forEach((rm) => {
+          if (!existingIds.has(rm.id)) {
+            allModels.push({
+              id: rm.id,
+              name: rm.name || rm.id,
+              value: `${alias}/${rm.id}`,
+              source: "system",
+            });
+            existingIds.add(rm.id);
+          }
+        });
+
         if (allModels.length > 0) {
           const matchedNode = providerNodes.find((node) => node.id === providerId);
           const displayName = matchedNode?.name || providerInfo.name;

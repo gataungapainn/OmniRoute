@@ -376,6 +376,7 @@ interface PassthroughModelsSectionProps {
   providerAlias: string;
   modelAliases: Record<string, string>;
   customModels?: CompatModelRow[];
+  registryModels?: CompatModelRow[];
   copied?: string;
   onCopy: (text: string, key: string) => void;
   onSetAlias: (modelId: string, alias: string) => Promise<void>;
@@ -2555,6 +2556,7 @@ export default function ProviderDetailPage() {
             providerAlias={providerAlias}
             modelAliases={modelAliases}
             customModels={modelMeta.customModels}
+            registryModels={registryModels}
             copied={copied}
             onCopy={copy}
             onSetAlias={handleSetAlias}
@@ -3763,6 +3765,7 @@ function PassthroughModelsSection({
   providerAlias,
   modelAliases,
   customModels = [],
+  registryModels = [],
   copied,
   onCopy,
   onSetAlias,
@@ -3805,6 +3808,24 @@ function PassthroughModelsSection({
       isHidden: isModelHidden(modelId),
     };
   });
+
+  // Inject built-in models if they are not already in the list
+  const existingModelIds = new Set(allModels.map((m) => m.modelId));
+  registryModels.forEach((rm) => {
+    // Treat 'auto' separately if needed, but generally we want to show it.
+    if (!existingModelIds.has(rm.id)) {
+      allModels.push({
+        modelId: rm.id,
+        fullModel: `${providerAlias}/${rm.id}`,
+        alias: rm.name || rm.id,
+        displayName: rm.name || rm.id,
+        source: "system",
+        isHidden: isModelHidden(rm.id),
+      });
+      existingModelIds.add(rm.id);
+    }
+  });
+
   const filteredModels = allModels.filter((model) =>
     matchesModelCatalogQuery(modelFilter, {
       modelId: model.modelId,
