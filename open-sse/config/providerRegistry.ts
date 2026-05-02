@@ -683,6 +683,20 @@ export const REGISTRY: Record<string, RegistryEntry> = {
     models: [{ id: "auto", name: "Auto (Best Available)" }],
   },
 
+  codebuddy: {
+    id: "codebuddy",
+    alias: "codebuddy",
+    format: "openai",
+    executor: "default",
+    baseUrl: "https://www.codebuddy.ai/v2/chat/completions",
+    modelsUrl: "https://www.codebuddy.ai/v2/models",
+    authType: "apikey",
+    authHeader: "bearer",
+    defaultContextLength: 128000,
+    models: [{ id: "auto", name: "Auto (Best Available)" }],
+    passthroughModels: true,
+  },
+
   openrouter: {
     id: "openrouter",
     alias: "openrouter",

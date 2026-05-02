@@ -163,6 +163,17 @@ export const APIKEY_PROVIDERS = {
     freeNote: "$200 free credits on signup - multi-model routing gateway",
     apiHint: "Get $200 free credits at https://agentrouter.org/register — no credit card required.",
   },
+  codebuddy: {
+    id: "codebuddy",
+    alias: "codebuddy",
+    name: "CodeBuddy",
+    icon: "code",
+    color: "#8B5CF6",
+    textIcon: "CB",
+    website: "https://www.codebuddy.ai",
+    passthroughModels: true,
+    apiHint: "Use your CodeBuddy API key. Provides OpenAI-compatible completions.",
+  },
   openrouter: {
     id: "openrouter",
     alias: "openrouter",

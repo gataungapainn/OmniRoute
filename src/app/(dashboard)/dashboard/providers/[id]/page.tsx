@@ -1014,6 +1014,9 @@ export default function ProviderDetailPage() {
   );
   const [applyingCodexAuthId, setApplyingCodexAuthId] = useState<string | null>(null);
   const [exportingCodexAuthId, setExportingCodexAuthId] = useState<string | null>(null);
+  const [showBulkInsert, setShowBulkInsert] = useState(false);
+  const [bulkApiKeys, setBulkApiKeys] = useState("");
+  const [bulkInserting, setBulkInserting] = useState(false);
   const isOpenAICompatible = isOpenAICompatibleProvider(providerId);
   const isCcCompatible = isClaudeCodeCompatibleProvider(providerId);
   const isAnthropicCompatible =
@@ -1457,6 +1460,53 @@ export default function ProviderDetailPage() {
     } catch (error) {
       console.log("Error saving connection:", error);
       return t("failedSaveConnectionRetry");
+    }
+  };
+
+  const handleBulkInsertApiKeys = async () => {
+    const keys = bulkApiKeys
+      .split("\n")
+      .map((k) => k.trim())
+      .filter((k) => k.length > 0);
+    if (keys.length === 0) return;
+
+    setBulkInserting(true);
+    let successCount = 0;
+    let failCount = 0;
+
+    for (let i = 0; i < keys.length; i++) {
+      try {
+        const res = await fetch("/api/providers", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            provider: providerId,
+            apiKey: keys[i],
+            name: `Key ${connections.length + successCount + 1}`,
+            priority: connections.length + successCount + 1,
+          }),
+        });
+        if (res.ok) {
+          successCount++;
+        } else {
+          failCount++;
+        }
+      } catch {
+        failCount++;
+      }
+    }
+
+    setBulkInserting(false);
+    setBulkApiKeys("");
+    setShowBulkInsert(false);
+    await fetchConnections();
+
+    if (failCount === 0) {
+      notify.success(`Added ${successCount} API key${successCount > 1 ? "s" : ""} successfully`);
+    } else {
+      notify.warning(
+        `Added ${successCount} key${successCount > 1 ? "s" : ""}, ${failCount} failed`
+      );
     }
   };
 
@@ -2860,6 +2910,15 @@ export default function ProviderDetailPage() {
                 <Button size="sm" icon="add" onClick={openPrimaryAddFlow}>
                   {providerSupportsPat ? "Add PAT" : t("add")}
                 </Button>
+                {!isOAuth && (
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => setShowBulkInsert((v) => !v)}
+                  >
+                    Bulk Add
+                  </Button>
+                )}
                 {providerId === "qoder" && (
                   <Button size="sm" variant="secondary" onClick={() => setShowOAuthModal(true)}>
                     Experimental OAuth
@@ -2867,13 +2926,58 @@ export default function ProviderDetailPage() {
                 )}
               </div>
             ) : (
-              connections.length === 0 && (
-                <Button size="sm" icon="add" onClick={() => setShowAddApiKeyModal(true)}>
-                  {t("add")}
+              <div className="flex items-center gap-2">
+                {connections.length === 0 && (
+                  <Button size="sm" icon="add" onClick={() => setShowAddApiKeyModal(true)}>
+                    {t("add")}
+                  </Button>
+                )}
+                <Button size="sm" variant="secondary" onClick={() => setShowBulkInsert((v) => !v)}>
+                  Bulk Add
                 </Button>
-              )
+              </div>
             )}
           </div>
+
+          {showBulkInsert && (
+            <div className="mb-4 rounded-lg border border-border bg-bg-subtle p-4">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-medium text-text-main">Bulk Add API Keys</h3>
+                <button
+                  type="button"
+                  onClick={() => setShowBulkInsert(false)}
+                  className="text-text-muted hover:text-text-main transition-colors"
+                >
+                  <span className="material-symbols-outlined text-[18px]">close</span>
+                </button>
+              </div>
+              <p className="text-xs text-text-muted mb-3">
+                Paste one API key per line. Each key will be added as a separate connection.
+              </p>
+              <textarea
+                value={bulkApiKeys}
+                onChange={(e) => setBulkApiKeys(e.target.value)}
+                placeholder={"sk-key-1\nsk-key-2\nsk-key-3"}
+                rows={5}
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm font-mono text-text-main placeholder:text-text-muted/50 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 resize-y"
+                disabled={bulkInserting}
+              />
+              <div className="flex items-center justify-between mt-3">
+                <span className="text-xs text-text-muted">
+                  {bulkApiKeys.split("\n").filter((k) => k.trim()).length} key(s) detected
+                </span>
+                <Button
+                  size="sm"
+                  onClick={handleBulkInsertApiKeys}
+                  disabled={
+                    bulkInserting || bulkApiKeys.split("\n").filter((k) => k.trim()).length === 0
+                  }
+                >
+                  {bulkInserting ? "Adding..." : "Add All"}
+                </Button>
+              </div>
+            </div>
+          )}
 
           {connections.length === 0 ? (
             <div className="text-center py-12">
