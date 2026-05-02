@@ -136,6 +136,7 @@ const KNOWN_SVGS = new Set([
   "brave",
   "cartesia",
   "cloudflare-ai",
+  "codebuddy",
   "comfyui",
   "elevenlabs",
   "exa-search",
