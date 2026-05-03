@@ -1465,25 +1465,45 @@ export default function ProviderDetailPage() {
   };
 
   const handleBulkInsertApiKeys = async () => {
-    const keys = bulkApiKeys
+    const lines = bulkApiKeys
       .split("\n")
       .map((k) => k.trim())
       .filter((k) => k.length > 0);
-    if (keys.length === 0) return;
+    if (lines.length === 0) return;
 
     setBulkInserting(true);
     let successCount = 0;
     let failCount = 0;
+    const isCodebuddy = providerId === "codebuddy";
 
-    for (let i = 0; i < keys.length; i++) {
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const keyName = `Key ${connections.length + successCount + 1}`;
+      let apiKey = line;
+      let name = keyName;
+
+      if (isCodebuddy) {
+        const separatorIndex = line.indexOf(":");
+        if (separatorIndex >= 0) {
+          const email = line.slice(0, separatorIndex).trim();
+          const parsedApiKey = line.slice(separatorIndex + 1).trim();
+          if (!email || !parsedApiKey) {
+            failCount++;
+            continue;
+          }
+          name = email;
+          apiKey = parsedApiKey;
+        }
+      }
+
       try {
         const res = await fetch("/api/providers", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             provider: providerId,
-            apiKey: keys[i],
-            name: `Key ${connections.length + successCount + 1}`,
+            apiKey,
+            name,
             priority: connections.length + successCount + 1,
           }),
         });
@@ -2954,12 +2974,18 @@ export default function ProviderDetailPage() {
                 </button>
               </div>
               <p className="text-xs text-text-muted mb-3">
-                Paste one API key per line. Each key will be added as a separate connection.
+                {providerId === "codebuddy"
+                  ? "Paste one entry per line using email:api_key or api_key. Each line will be added as a separate connection."
+                  : "Paste one API key per line. Each key will be added as a separate connection."}
               </p>
               <textarea
                 value={bulkApiKeys}
                 onChange={(e) => setBulkApiKeys(e.target.value)}
-                placeholder={"sk-key-1\nsk-key-2\nsk-key-3"}
+                placeholder={
+                  providerId === "codebuddy"
+                    ? "name@example.com:cb-key-1\nname2@example.com:cb-key-2\ncb-key-3"
+                    : "sk-key-1\nsk-key-2\nsk-key-3"
+                }
                 rows={5}
                 className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm font-mono text-text-main placeholder:text-text-muted/50 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 resize-y"
                 disabled={bulkInserting}

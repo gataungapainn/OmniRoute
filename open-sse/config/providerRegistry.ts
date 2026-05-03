@@ -692,7 +692,7 @@ export const REGISTRY: Record<string, RegistryEntry> = {
     modelsUrl: "https://www.codebuddy.ai/v2/models",
     authType: "apikey",
     authHeader: "bearer",
-    defaultContextLength: 128000,
+    defaultContextLength: 32000,
     models: [
       { id: "default-model", name: "Default Model Codebuddy" },
       { id: "claude-opus-4.6", name: "Claude Opus 4.6" },
